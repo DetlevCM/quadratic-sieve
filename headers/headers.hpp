@@ -18,7 +18,9 @@
 
 #include <strstream>
 #include <stdio.h>
-#include <mpir.h>
+//#include <mpir.h>
+// full C++ support https://gmplib.org/manual/C_002b_002b-Interface-General
+#include <gmpxx.h>
 
 //http://www.math.uni-bayreuth.de/~rbaier/lectures/c++_intro/html/node62.html
 #include <string>

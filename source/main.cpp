@@ -178,7 +178,8 @@ int main(int argc, char* argv[])
 	long MU = ceil(mu); // rounding mu up, so that numbers don't get too large
 	//std::cout << "This is MU " << MU << "\n" ;
 
-	mpz_nthroot (Bound, MWurzelN , MU); // nth root = power 1/n
+	//mpz_nthroot (Bound, MWurzelN , MU); // nth root = power 1/n
+	mpz_root (Bound, MWurzelN , MU); // nth root = power 1/n
 	long B = mpz_get_si (Bound); // Save Bound as an integer for use in loops
 	if(B > 19999){ // force bound smaller if excessive
 		mpz_set_ui (Bound, 19999);
