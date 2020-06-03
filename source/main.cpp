@@ -22,8 +22,21 @@ int main(int argc, char* argv[])
 	int size_vec_SievingInterval = 10000;
 	int size_vec_CongruentX = 5000;
 	int size_vec_FactorBaseLogs = 5000;
+	int size_vec_ChosenVectors = 10000;
 
 	int size_max_DM = 4999; // this was a limit used, applies to a matrix later I believe
+	int size_max_B = 19999; // another limiter of some sort...
+
+	// some old classical arrays, now defined as vectorsm their sizes are identical
+	int size_vec_mapone = 5000;
+	int size_vec_maptwo = size_vec_mapone;
+	int size_vec_mapprimes = size_vec_mapone;
+
+	int size_vec_selection = 10000;
+	int size_vec_row = 5000;
+
+	int size_vec_choices = 5000;
+	int size_vec_ChoicePrimePowers = 5000;
 
 	/* Some general Counters I use */
 	int  i;
@@ -210,9 +223,9 @@ int main(int argc, char* argv[])
 	//mpz_nthroot (Bound, MWurzelN , MU); // nth root = power 1/n
 	mpz_root (Bound, MWurzelN , MU); // nth root = power 1/n
 	long B = mpz_get_si (Bound); // Save Bound as an integer for use in loops
-	if(B > 19999){ // force bound smaller if excessive
-		mpz_set_ui (Bound, 19999);
-		B = 19999;
+	if(B > size_max_B){ // force bound smaller if excessive
+		mpz_set_ui (Bound, size_max_B);
+		B = size_max_B;
 	}
 
 	std::cout << "This is M: " << M << "\n" << "This is B: " << B <<"\n \n"; // Testing my bound
@@ -501,10 +514,12 @@ int main(int argc, char* argv[])
 
 	std::vector<std::vector<int>> Matrix(5000 , std::vector<int> (10000)); 
 	// same size as first matrix, even though this is excessive
-	int mapone[10000];
-	for(i=0;i<10000;i++){
+	vector< int > mapone;//[10000];
+	mapone.resize(size_vec_mapone);
+	// vector initializes to zero
+	/*for(i=0;i<10000;i++){
 		mapone[i]=0;
-	}
+	}//*/
 	int ReducedMatrix;
 
 	iii = 0;
@@ -548,10 +563,12 @@ int main(int argc, char* argv[])
 	// More reducing - vectors of zero can be removed
 
 
-	int maptwo[10000];
-	for(i=0;i<10000;i++){
+	vector< int > maptwo;//[10000];
+	maptwo.resize(size_vec_maptwo);
+	// no longer needed for vector initialised to zero
+/*	for(i=0;i<10000;i++){
 		maptwo[i]=0;
-	}
+	}//*/
 	std::vector<std::vector<int>> MatrixReducedTwo(5000 , std::vector<int> (10000));
 	int counter;
 	int ReducedMatrixTwo;
@@ -584,10 +601,12 @@ int main(int argc, char* argv[])
 
 	// let us get rid of empty rows in the matrix
 
-	int mapprimes[5000];
-	for(i=0;i<5000;i++){
+	vector< int > mapprimes;//[5000];
+	mapprimes.resize(size_vec_mapprimes);
+	// no longer needed vector initialises to zero
+	/*for(i=0;i<5000;i++){
 		mapprimes[i]=0;
-	}
+	}//*/
 	std::vector<std::vector<int>> MatrixReducedThree(5000 , std::vector<int> (10000));
 	int ReducedMatrixRows;
 	iii = 0;
@@ -645,14 +664,16 @@ int main(int argc, char* argv[])
 
 	ii = 0;
 	int check;
-	int selection[10000];
-	int row[5000];
-
-	for(i=0;i<4999;i++){
+	vector< int > selection;//[10000];
+	vector< int > row;//[5000];
+	selection.resize(size_vec_selection);
+	row.resize(size_vec_row);
+	// no longer needed with vector
+	/*for(i=0;i<4999;i++){
 		selection[2*i+1]=0;
 		selection[2*i]=0;
 		row[i]=0;
-	}
+	}//*/
 
 	for(i=0;i<ReducedMatrixTwo;i++){ // over all columns
 		ii = 0;
@@ -719,11 +740,13 @@ int main(int argc, char* argv[])
 		int Vektorwahl; //this contains the sum of the elements in the vector -> if it's zero I have a zero vector, which is of little use
 
 		// searchign for the right pivots
-		int NumberSelectedVectors;
-		int ChosenVectors[10000];
-		for(i = 0; i <= 9999; i++){
+		int NumberSelectedVectors = 0;
+		vector< int >ChosenVectors;//[10000];
+		ChosenVectors.resize(size_vec_ChosenVectors);
+		// vectors are automatically initialized
+		/*for(i = 0; i <= 9999; i++){
 			ChosenVectors[i]=0;
-		}
+		}//*/
 		iii = 0;
 
 		/* The idea: Pick a vector from the right of the matrix, then select pivots from the right
@@ -766,7 +789,7 @@ int main(int argc, char* argv[])
 
 		iii = NumberSelectedVectors;
 
-		std::cout << "Vectors Selected \n";
+		std::cout << iii << " Vectors Selected \n";
 		//std::cout << "The Number of Selected Vectors is " << NumberSelectedVectors << "\n" ; // just testing
 
 		/*for(i=0;i<NumberSelectedVectors;i++){ // Just testing
@@ -785,13 +808,17 @@ int main(int argc, char* argv[])
 		/* Variables for this section: */
 
 		// maptwo[] contains the mappings for my "M" which I need to select the right ones
-		int choices[5000];
+		vector< int >choices;//[5000];
+		choices.resize(size_vec_choices);
 		int choice;
 
-		int ChoicePrimePowers[5000];
-		for(i=0;i<4999;i++){
+		vector< int >ChoicePrimePowers;//[5000];
+		ChoicePrimePowers.resize(size_vec_ChoicePrimePowers);
+
+		// no longer needed with vector
+		/*for(i=0;i<4999;i++){
 			ChoicePrimePowers[i]=0;
-		}
+		}//*/
 		int ChoicePrimePowerArray;
 
 		mpz_t LargeX;
