@@ -42,5 +42,6 @@
 // for time: http://www.cplusplus.com/reference/clibrary/ctime/time/
 #include <time.h>
 
+using std::vector;
 
 #endif /* HEADERS_HEADERS_HPP_ */

@@ -71,9 +71,12 @@ int main(int argc, char* argv[])
 	/* XXX - My Arrays - XXX */
 
 	// Create an array for primes - 10.000 spaces is enough
-	mpz_t MPrimes[20000];
+	//mpz_t MPrimes[20000];
+	vector< mpz_class > MPrimes;
+	MPrimes.resize(20000);
 	for(i = 0; i <= 19999; i++){  //initialize every value in the array by feeding it trough a loop
-		mpz_init(MPrimes[i]);
+		//mpz_init(MPrimes[i]);
+		MPrimes[i] = 0; // if the mpz_class is usedm this initialises the variable
 	}
 
 	mpz_t MFactorBase[10000]; // this array contains my factor base (Primes that 'passed' the Legendre Symbol)
@@ -195,7 +198,7 @@ int main(int argc, char* argv[])
 	i = 2; // start my first prime in position 2, position 1 would normally be -1
 	//mpz_set_ui(MPrimes[0],1); // set position 1 to 1, just in case -> causes error
 	mpz_set_ui (Zii,2);
-	mpz_set (MPrimes[1], Zii);
+	mpz_set (MPrimes[1].get_mpz_t (), Zii);
 
 	//loop trough a counter to find primes up to bound B
 	for(ii = 2; ii <= B/2 && i<20000 ;ii++){
@@ -204,7 +207,7 @@ int main(int argc, char* argv[])
 		// if the value is definitely prime, write into array
 		if(mpz_probab_prime_p (Zii , 10) > 1)
 		{
-			mpz_set (MPrimes[i],Zii);
+			mpz_set (MPrimes[i].get_mpz_t (),Zii);
 			i++; // increase array position by 1
 		}
 	}
@@ -220,8 +223,8 @@ int main(int argc, char* argv[])
 	i=2;
 	for(ii = 2; ii<=PrimeArray && ii <= 19999 ;ii++){
 		//std::cout << mpz_legendre(N,MPrimes[ii]);
-		if( mpz_legendre(N,MPrimes[ii]) >= 1 ){ // mpz_legendre is 1 when true
-			mpz_set (MFactorBase[i],MPrimes[ii]);
+		if( mpz_legendre(N,MPrimes[ii].get_mpz_t ()) >= 1 ){ // mpz_legendre is 1 when true
+			mpz_set (MFactorBase[i],MPrimes[ii].get_mpz_t ());
 			i++;
 		}
 	}
@@ -885,9 +888,10 @@ int main(int argc, char* argv[])
 	/* xxxxxxxxxxxxxxxxxxxxxx *//* Clear no longer needed variables *//* xxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 
+	/*
 	for(i = 0; i <= 19999; i++){
 		mpz_clear(MPrimes[i]);
-	}
+	}//*/
 	
 	mpz_clear(step1);
 	mpz_clear(step2);
