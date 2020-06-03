@@ -633,7 +633,7 @@ int main(int argc, char* argv[])
 			ii = ii +1 ;
 		}while(check == 0 && ii < ReducedMatrixRows);
 
-		if(check = 1){
+		if(check == 1){
 		for(ii=0;ii<ReducedMatrixRows;ii++){ // over all rows
 			
 			if(MatrixReducedThree[ii][i] == 1 && selection[i] != ii){
@@ -706,7 +706,7 @@ int main(int argc, char* argv[])
 			//swapped i and ii round, I need to go trhough the rows not columns as I did before by accident
 		}
 		i = i-1;
-	}while(Vektorwahl = 0); //this do loop will find a non-zero vector, starting from the right hand side of the matrix
+	}while(Vektorwahl == 0); //this do loop will find a non-zero vector, starting from the right hand side of the matrix
 
 	Vektorwahl = i; // -> Now "Vektorwahl" contains the "ID" of the selected Vector
 
