@@ -9,6 +9,17 @@
 int main(int argc, char* argv[])
 {
 	
+
+	/*
+	 * The original code was written with mpir and needed to use arrays.
+	 * With GMP it is possible to use vectors that allow dynamic resizing.
+	 * The values should be identified as the code is updated and the required sizes identified.
+	 */
+
+	int size_vec_MPrimes = 20000;
+	int size_vec_MFactorBase = 10000;
+
+
 	/* Some general Counters I use */
 	int  i;
 	int ii;
@@ -73,15 +84,18 @@ int main(int argc, char* argv[])
 	// Create an array for primes - 10.000 spaces is enough
 	//mpz_t MPrimes[20000];
 	vector< mpz_class > MPrimes;
-	MPrimes.resize(20000);
-	for(i = 0; i <= 19999; i++){  //initialize every value in the array by feeding it trough a loop
+	MPrimes.resize(size_vec_MPrimes);
+	for(i = 0; i < size_vec_MPrimes; i++){  //initialize every value in the array by feeding it trough a loop
 		//mpz_init(MPrimes[i]);
 		MPrimes[i] = 0; // if the mpz_class is usedm this initialises the variable
 	}
 
-	mpz_t MFactorBase[10000]; // this array contains my factor base (Primes that 'passed' the Legendre Symbol)
-	for(i = 0; i <= 9999; i++){
-		mpz_init(MFactorBase[i]);
+	//mpz_t MFactorBase[10000]; // this array contains my factor base (Primes that 'passed' the Legendre Symbol)
+	vector< mpz_class > MFactorBase;
+	MFactorBase.resize(size_vec_MFactorBase);
+	for(i = 0; i < size_vec_MFactorBase; i++){
+		//mpz_init(MFactorBase[i]);
+		MFactorBase[i] = 0;
 	}
 
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
@@ -219,12 +233,12 @@ int main(int argc, char* argv[])
 
 	/* Let us optimize our factor base with the Legendre Symbol - page 43 in the manual */
 	mpz_set_ui(Zii,2);
-	mpz_set (MFactorBase[1], Zii); //a roundabout way of including 2, but easy to do
+	mpz_set (MFactorBase[1].get_mpz_t(), Zii); //a roundabout way of including 2, but easy to do
 	i=2;
 	for(ii = 2; ii<=PrimeArray && ii <= 19999 ;ii++){
 		//std::cout << mpz_legendre(N,MPrimes[ii]);
 		if( mpz_legendre(N,MPrimes[ii].get_mpz_t ()) >= 1 ){ // mpz_legendre is 1 when true
-			mpz_set (MFactorBase[i],MPrimes[ii].get_mpz_t ());
+			mpz_set (MFactorBase[i].get_mpz_t(),MPrimes[ii].get_mpz_t ());
 			i++;
 		}
 	}
@@ -239,7 +253,7 @@ int main(int argc, char* argv[])
 	for(i=1;i<FactorBaseArray;i++){ // this creates an array of the logs of primes
 		//mpz_out_str(stdout,10,MFactorBase[i]); // Testing
 		//printf ("\n");
-		Prim = mpz_get_d (MFactorBase[i]);
+		Prim = mpz_get_d (MFactorBase[i].get_mpz_t());
 		FactorBaseLogs[i] = log(Prim);
 		//std::cout << FactorBaseLogs[i] << "\n" ; // Testing
 	}
@@ -268,9 +282,9 @@ int main(int argc, char* argv[])
 	}
 	
 	for(i=2;i<FactorBaseArray;i++){
-		mpz_mod (Nmodp, N , MFactorBase[i]); // find my N mod p
+		mpz_mod (Nmodp, N , MFactorBase[i].get_mpz_t()); // find my N mod p
 
-		long Prim = mpz_get_ui(MFactorBase[i]); //getting my prime from the mpz - thanks NBR :)
+		long Prim = mpz_get_ui(MFactorBase[i].get_mpz_t()); //getting my prime from the mpz - thanks NBR :)
 
 		int Zeiger = 0; // A pointer - set to 0
 		mpz_set_ui(CongruentX2[1],1); // arange for prime = 2
@@ -279,7 +293,7 @@ int main(int argc, char* argv[])
 		for(ii=1;ii<=Prim;ii++){
 			mpz_set_ui(Zii,ii);
 			mpz_mul (ZiiSquared,Zii,Zii);
-			if(mpz_congruent_p (ZiiSquared,Nmodp,MFactorBase[i])){
+			if(mpz_congruent_p (ZiiSquared,Nmodp,MFactorBase[i].get_mpz_t())){
 				if(Zeiger==1){
 					mpz_set(CongruentX2[i],Zii); //the first solution
 					//std::cout << "Solution 2: " << ii << " - The Prime Number is: " << Prim << "\n"; //testcode
@@ -387,14 +401,14 @@ int main(int argc, char* argv[])
 
 	for(i=1;i<FactorBaseArray;i++){ // I need to sieve through all my primes
 		for(ii=0;ii<Prim && ii< 2*M;ii++){ // check a range of "prime" for congruence
-			long LongPrim = mpz_get_ui (MFactorBase[i]);
-			if(0<mpz_congruent_p (SievingInterval[ii],CongruentX1[i],MFactorBase[i])){ //write a 1 to array where divisible
+			long LongPrim = mpz_get_ui (MFactorBase[i].get_mpz_t());
+			if(0<mpz_congruent_p (SievingInterval[ii],CongruentX1[i],MFactorBase[i].get_mpz_t())){ //write a 1 to array where divisible
 				for(iii=ii;iii<2*M;){
 					FirstPowerSieving[i][iii]=1;
 					iii = iii+LongPrim;
 				}
 			}
-			if(0<mpz_congruent_p (SievingInterval[ii],CongruentX2[i],MFactorBase[i])){
+			if(0<mpz_congruent_p (SievingInterval[ii],CongruentX2[i],MFactorBase[i].get_mpz_t())){
 				for(iii=ii;iii<2*M;){
 					FirstPowerSieving[i][iii]=1;
 					iii = iii+LongPrim;
@@ -418,7 +432,7 @@ int main(int argc, char* argv[])
 	long PrimPower;
 
 	for(i=1;i<FactorBaseArray;i++){
-		Prim = mpz_get_d (MFactorBase[i]);
+		Prim = mpz_get_d (MFactorBase[i].get_mpz_t());
 		//std::cout << "\n" << Prim << " - " ;
 		for(ii=0;ii<2*M;ii++){
 			if(FirstPowerSieving[i][ii]>=1){ // check whether it divides by p^1 -> no need to test the ones I know aren't divisible
@@ -765,7 +779,7 @@ int main(int argc, char* argv[])
 	mpz_t LargeX;
 	mpz_init(LargeX);
 	mpz_set_ui(LargeX,1); // set one for later multiplications, an empty variable with zero wouldn't work
-	mpz_set_ui(MFactorBase[0],1);
+	mpz_set_ui(MFactorBase[0].get_mpz_t(),1);
 	
 	// my large y, 1 for multiplication
 	mpz_t LargeY;
@@ -819,7 +833,7 @@ int main(int argc, char* argv[])
 	}*/
 
 	for(i=1;i<ChoicePrimePowerArray;i++){
-		mpz_pow_ui(Zii,MFactorBase[i],ChoicePrimePowers[i]);
+		mpz_pow_ui(Zii,MFactorBase[i].get_mpz_t(),ChoicePrimePowers[i]);
 		mpz_mul(LargeY,LargeY,Zii);
 	}
 
