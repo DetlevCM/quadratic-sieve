@@ -8,7 +8,7 @@
 //char main ( char ,char *argv[]/*Eingabe, int argc, char *argv[]*/)
 int main(int argc, char* argv[])
 {
-	
+
 
 	/*
 	 * The original code was written with mpir and needed to use arrays.
@@ -18,7 +18,12 @@ int main(int argc, char* argv[])
 
 	int size_vec_MPrimes = 20000;
 	int size_vec_MFactorBase = 10000;
+	int size_vec_ArrayOfQxLogs = 10000;
+	int size_vec_SievingInterval = 10000;
+	int size_vec_CongruentX = 5000;
+	int size_vec_FactorBaseLogs = 5000;
 
+	int size_max_DM = 4999; // this was a limit used, applies to a matrix later I believe
 
 	/* Some general Counters I use */
 	int  i;
@@ -36,20 +41,21 @@ int main(int argc, char* argv[])
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxx *//* Variables used in my preparation steps */ /* xxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
-	
+
 	// Normal Variables
 	std::string Eingabe; // input variable - a standard string, char only takes 1 character
 
 	int o1 = 0; // Refers to the complexity - 0 for the start, might need changing
 	int PrimeArray; //a variable to record the size of the prime Array
 	int FactorBaseArray; //a variable to record the size of the Factor Base
-	
+
 	double Root16thN; // the 16th Root of N to work out my Logarithms, small enough for a double
 	double DM; // my "raw M" as it's worked out - hence a double
 	double mu; // my mu
 
 	double Prim; // a double to get my primes for conversion into Logs, 15 digits should suffice
-	double FactorBaseLogs[5000]; // my array with logarithms of primes
+	vector<double> FactorBaseLogs; // my array with logarithms of primes
+	FactorBaseLogs.resize(size_vec_FactorBaseLogs);
 
 	/* xxxxxxxxxx *//* xxxxxxxxxx *//* xxxxxxxxxx */
 	/* xxxxxxxxxx *//* MPIR Stuff *//* xxxxxxxxxx */
@@ -74,7 +80,7 @@ int main(int argc, char* argv[])
 	/* XXX - MPF Types - XXX */
 	mpf_t FloatN; //N as a floating point number for a reasonably accurate 16th root
 	mpf_init (FloatN);
-		mpf_t Root1; // steppingstones to find my 16th Root
+	mpf_t Root1; // steppingstones to find my 16th Root
 	mpf_init (Root1);
 	mpf_t Root2;
 	mpf_init (Root2);
@@ -107,18 +113,24 @@ int main(int argc, char* argv[])
 	/* xxxxxxxxxxxxxxxxxx *//* Begin Sieving Interval Variables *//* xxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
 
-	double ArrayOfQxLogs[10000]; // the array that contains the ln of my q(x)
-
+	vector<double> ArrayOfQxLogs; // the array that contains the ln of my q(x)
+	ArrayOfQxLogs.resize(size_vec_ArrayOfQxLogs);
 	// Steppingstone Variable for working out logs
 	mpf_t LogsQx;
 	mpf_init(LogsQx);
 
 	// This array contains my Sieving Interval
-	mpz_t SievingInterval[10000];
-	mpz_t SievingIntervalSquares[10000];
-	for(i=0;i<=9999;i++){
-		mpz_init(SievingInterval[i]);
-		mpz_init(SievingIntervalSquares[i]);
+	//mpz_t SievingInterval[10000];
+	//mpz_t SievingIntervalSquares[10000];
+	vector< mpz_class > SievingInterval;
+	vector< mpz_class > SievingIntervalSquares;
+	SievingInterval.resize(size_vec_SievingInterval);
+	SievingIntervalSquares.resize(size_vec_SievingInterval);
+	for(i=0;i<size_vec_SievingInterval;i++){
+		//mpz_init(SievingInterval[i]);
+		//mpz_init(SievingIntervalSquares[i]);
+		SievingInterval[i] = 0;
+		SievingIntervalSquares[i] = 0;
 	}
 
 	// Some Stepping Stones
@@ -170,7 +182,7 @@ int main(int argc, char* argv[])
 	mpf_sqrt (Root2,Root1); // sqrt four times
 
 	Root16thN = mpf_get_d (Root2); // move my root into a double to use logarithms
-	
+
 	DM = exp((1+o1)*sqrt((16*log(Root16thN)*log(16*log(Root16thN))))); // this is my M contained in a double
 
 	/* Now I have my M */
@@ -179,11 +191,11 @@ int main(int argc, char* argv[])
 	/* The next bound is B - my factor base bound */
 	mu = sqrt((2*(log(DM)+8*log(Root16thN)))/(log((log(DM)+8*log(Root16thN))))); // -> works
 	//std::cout << "DM: " << DM << "\n" << "mu: " << mu << "\n"; // Just checking my DM & mu
-	
-	
+
+
 	long M = ceil(DM); // round my DM up to an integer
-	if(DM > 4999){ // force bound smaller if excessive
-		M = 4999;
+	if(DM > size_max_DM){ // force bound smaller if excessive
+		M = size_max_DM;
 	}
 
 	mpz_set_ui(MM, M); // move my M to a MPZ variable to handle
@@ -191,7 +203,7 @@ int main(int argc, char* argv[])
 	mpz_sqrt(WurzelN, N); //obtain my floor square root of N
 	mpz_mul(MWurzelN,MM,WurzelN); // find M sqrt N
 
-	
+
 	long MU = ceil(mu); // rounding mu up, so that numbers don't get too large
 	//std::cout << "This is MU " << MU << "\n" ;
 
@@ -202,20 +214,20 @@ int main(int argc, char* argv[])
 		mpz_set_ui (Bound, 19999);
 		B = 19999;
 	}
-	
+
 	std::cout << "This is M: " << M << "\n" << "This is B: " << B <<"\n \n"; // Testing my bound
 
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* Let us build an array of primes *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
-	
+
 	i = 2; // start my first prime in position 2, position 1 would normally be -1
 	//mpz_set_ui(MPrimes[0],1); // set position 1 to 1, just in case -> causes error
 	mpz_set_ui (Zii,2);
 	mpz_set (MPrimes[1].get_mpz_t (), Zii);
 
 	//loop trough a counter to find primes up to bound B
-	for(ii = 2; ii <= B/2 && i<20000 ;ii++){
+	for(ii = 2; ii <= B/2 && i < size_vec_MPrimes ;ii++){
 		mpz_set_ui (Zii,2*ii-1); // set my mpz variable to the counter, only check odd numbers
 		//check = mpz_probab_prime_p (Zii , 10);// page 43 MPIR manual - do 10 tests if Zii is prime
 		// if the value is definitely prime, write into array
@@ -235,7 +247,7 @@ int main(int argc, char* argv[])
 	mpz_set_ui(Zii,2);
 	mpz_set (MFactorBase[1].get_mpz_t(), Zii); //a roundabout way of including 2, but easy to do
 	i=2;
-	for(ii = 2; ii<=PrimeArray && ii <= 19999 ;ii++){
+	for(ii = 2; ii <= PrimeArray && ii < size_vec_MPrimes ;ii++){
 		//std::cout << mpz_legendre(N,MPrimes[ii]);
 		if( mpz_legendre(N,MPrimes[ii].get_mpz_t ()) >= 1 ){ // mpz_legendre is 1 when true
 			mpz_set (MFactorBase[i].get_mpz_t(),MPrimes[ii].get_mpz_t ());
@@ -274,32 +286,38 @@ int main(int argc, char* argv[])
 	mpz_t Nmodp;
 	mpz_init(Nmodp);
 
-	mpz_t CongruentX1[5000]; // this array contains my x1^2 equiv N mod P
-	mpz_t CongruentX2[5000]; // this array contains my x2^2 equiv N mod P
-	for(i = 0; i <= 4999; i++){
-		mpz_init(CongruentX1[i]);
-		mpz_init(CongruentX2[i]);
+	//mpz_t CongruentX1[5000]; // this array contains my x1^2 equiv N mod P
+	//mpz_t CongruentX2[5000]; // this array contains my x2^2 equiv N mod P
+	vector< mpz_class > CongruentX1;
+	vector< mpz_class > CongruentX2;
+	CongruentX1.resize(size_vec_CongruentX);
+	CongruentX2.resize(size_vec_CongruentX);
+	for(i = 0; i < size_vec_CongruentX; i++){
+		//mpz_init(CongruentX1[i]);
+		//mpz_init(CongruentX2[i]);
+		CongruentX1[i] = 0;
+		CongruentX2[i] = 0;
 	}
-	
+
 	for(i=2;i<FactorBaseArray;i++){
 		mpz_mod (Nmodp, N , MFactorBase[i].get_mpz_t()); // find my N mod p
 
 		long Prim = mpz_get_ui(MFactorBase[i].get_mpz_t()); //getting my prime from the mpz - thanks NBR :)
 
 		int Zeiger = 0; // A pointer - set to 0
-		mpz_set_ui(CongruentX2[1],1); // arange for prime = 2
-		mpz_set_ui(CongruentX2[1],1);
+		mpz_set_ui(CongruentX2[1].get_mpz_t(),1); // arange for prime = 2
+		mpz_set_ui(CongruentX2[1].get_mpz_t(),1);
 
 		for(ii=1;ii<=Prim;ii++){
 			mpz_set_ui(Zii,ii);
 			mpz_mul (ZiiSquared,Zii,Zii);
 			if(mpz_congruent_p (ZiiSquared,Nmodp,MFactorBase[i].get_mpz_t())){
 				if(Zeiger==1){
-					mpz_set(CongruentX2[i],Zii); //the first solution
+					mpz_set(CongruentX2[i].get_mpz_t(),Zii); //the first solution
 					//std::cout << "Solution 2: " << ii << " - The Prime Number is: " << Prim << "\n"; //testcode
 				}
 				if(Zeiger==0){
-					mpz_set(CongruentX1[i],Zii); //the second solution
+					mpz_set(CongruentX1[i].get_mpz_t(),Zii); //the second solution
 					Zeiger=1;
 					//std::cout << "Solution 1: " << ii << " - The Prime Number is: " << Prim << "\n"; //testcode
 				}
@@ -327,12 +345,12 @@ int main(int argc, char* argv[])
 	for(i=0;i<=M;i++){ // this works out root n - m
 		mpz_set_ui (Zii,M-i);
 		mpz_sub(step1,WurzelN,Zii);
-		mpz_set(SievingInterval[i],step1);
+		mpz_set(SievingInterval[i].get_mpz_t(),step1);
 	}
 	for(i=M+1;i<=2*M;i++){ // this works out root n + m
 		mpz_set_ui (Zii,i-M);
 		mpz_add(step1,WurzelN,Zii);
-		mpz_set(SievingInterval[i],step1);
+		mpz_set(SievingInterval[i].get_mpz_t(),step1);
 	}
 
 	for(i=0;i<=M;i++){ // this does the negative values and records them positively
@@ -340,14 +358,14 @@ int main(int argc, char* argv[])
 		mpz_sub(step1,WurzelN,Zii);
 		mpz_mul (step2,step1,step1);
 		mpz_sub(step1,N,step2);
-		mpz_set(SievingIntervalSquares[i],step1);
+		mpz_set(SievingIntervalSquares[i].get_mpz_t(),step1);
 	}
 	for(i=M+1;i<=2*M;i++){ // this works out the positive values
 		mpz_set_ui (Zii,i-M);
 		mpz_add(step1,WurzelN,Zii);
 		mpz_mul (step2,step1,step1);
 		mpz_sub(step1,step2,N);
-		mpz_set(SievingIntervalSquares[i],step1);
+		mpz_set(SievingIntervalSquares[i].get_mpz_t(),step1);
 	}
 
 	/*for(i = M-10; i<M+10 ;i++){ // Just testing
@@ -357,7 +375,7 @@ int main(int argc, char* argv[])
 
 	// Let's get the logs of q(x)
 	for(i=0;i<=2*M;i++){
-		mpf_set_z(LogsQx,SievingIntervalSquares[i]);
+		mpf_set_z(LogsQx,SievingIntervalSquares[i].get_mpz_t());
 
 		mpf_sqrt (Root1,LogsQx); //sqrt once
 		mpf_sqrt (Root2,Root1); // sqrt twice
@@ -402,13 +420,13 @@ int main(int argc, char* argv[])
 	for(i=1;i<FactorBaseArray;i++){ // I need to sieve through all my primes
 		for(ii=0;ii<Prim && ii< 2*M;ii++){ // check a range of "prime" for congruence
 			long LongPrim = mpz_get_ui (MFactorBase[i].get_mpz_t());
-			if(0<mpz_congruent_p (SievingInterval[ii],CongruentX1[i],MFactorBase[i].get_mpz_t())){ //write a 1 to array where divisible
+			if(0<mpz_congruent_p (SievingInterval[ii].get_mpz_t(),CongruentX1[i].get_mpz_t(),MFactorBase[i].get_mpz_t())){ //write a 1 to array where divisible
 				for(iii=ii;iii<2*M;){
 					FirstPowerSieving[i][iii]=1;
 					iii = iii+LongPrim;
 				}
 			}
-			if(0<mpz_congruent_p (SievingInterval[ii],CongruentX2[i],MFactorBase[i].get_mpz_t())){
+			if(0<mpz_congruent_p (SievingInterval[ii].get_mpz_t(),CongruentX2[i].get_mpz_t(),MFactorBase[i].get_mpz_t())){
 				for(iii=ii;iii<2*M;){
 					FirstPowerSieving[i][iii]=1;
 					iii = iii+LongPrim;
@@ -418,7 +436,7 @@ int main(int argc, char* argv[])
 	}
 	// Let's add a marker for -1 where the value should be negative:
 	for(i=0;i<=M;i++){
-			FirstPowerSieving[0][i]=1;
+		FirstPowerSieving[0][i]=1;
 	}
 
 	/*for(i=0;i<FactorBaseArray;i++){ // testing my first power sieving, works.
@@ -441,15 +459,15 @@ int main(int argc, char* argv[])
 					iii = iii+1;
 					PrimPower = pow(Prim,iii);// work out my prime^something for the modulo
 					//std::cout << PrimPower << " - " << mpz_divisible_ui_p (SievingIntervalSquares[ii],PrimPower) << " - " << mpz_get_ui(SievingIntervalSquares[ii]) <<"\n";
-				//}while(0<mpz_congruent_ui_p (SievingIntervalSquares[ii],0,PrimPower)); // check if congruent
-				// testing for divisibility or congruence in modulo, both work equally well,both fail at powers of 2
-				}while(mpz_divisible_ui_p (SievingIntervalSquares[ii],PrimPower) && iii < 11); // check if civisible
+					//}while(0<mpz_congruent_ui_p (SievingIntervalSquares[ii],0,PrimPower)); // check if congruent
+					// testing for divisibility or congruence in modulo, both work equally well,both fail at powers of 2
+				}while(mpz_divisible_ui_p (SievingIntervalSquares[ii].get_mpz_t(),PrimPower) && iii < 11); // check if civisible
 				FirstPowerSieving[i][ii]=iii-1; // set new power, - 1, as the last evaluated value would be 1 too big
 				//std::cout << FirstPowerSieving[i][ii];
 			}
 		}
 	}
-	
+
 	/*for(i=0;i<FactorBaseArray;i++){ // testing my prime power finder 
 		std::cout << "\n" << mpz_get_d (MFactorBase[i]) << " - ";
 		for(ii=M-10;ii<M+10;ii++){
@@ -469,9 +487,9 @@ int main(int argc, char* argv[])
 	/*for(i=0;i<2*M;i++){
 		std::cout << ArrayOfQxLogs[i] << " - " << i << "\n";
 	}*/
-	
+
 	std::cout << "Logartihms Calculated \n";
-	
+
 	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxxxx *//* Let us end the sieving *//* xxxxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
@@ -490,7 +508,7 @@ int main(int argc, char* argv[])
 	int ReducedMatrix;
 
 	iii = 0;
-	
+
 	for(i=0;i<2*M;i++){
 		if(abs(ArrayOfQxLogs[i])<1){
 			for(ii=0;ii<FactorBaseArray;ii++){
@@ -529,7 +547,7 @@ int main(int argc, char* argv[])
 	/* Gaussian Elimination... or maybe some more reducing... */
 	// More reducing - vectors of zero can be removed
 
-	
+
 	int maptwo[10000];
 	for(i=0;i<10000;i++){
 		maptwo[i]=0;
@@ -537,7 +555,7 @@ int main(int argc, char* argv[])
 	std::vector<std::vector<int>> MatrixReducedTwo(5000 , std::vector<int> (10000));
 	int counter;
 	int ReducedMatrixTwo;
-	
+
 	iii = 0;
 	for(ii=0;ii<ReducedMatrix;ii++){
 		counter = 0;
@@ -548,8 +566,8 @@ int main(int argc, char* argv[])
 			for(i=0;i<FactorBaseArray;i++){
 				MatrixReducedTwo[i][iii] = Matrix[i][ii];
 			}
-		maptwo[iii]=mapone[ii];
-		iii = iii +1;
+			maptwo[iii]=mapone[ii];
+			iii = iii +1;
 		}
 	}
 
@@ -573,7 +591,7 @@ int main(int argc, char* argv[])
 	std::vector<std::vector<int>> MatrixReducedThree(5000 , std::vector<int> (10000));
 	int ReducedMatrixRows;
 	iii = 0;
-	
+
 	for(i=0;i<FactorBaseArray;i++){
 		counter = 0;
 		for(ii=0;ii<ReducedMatrixTwo;ii++){
@@ -583,8 +601,8 @@ int main(int argc, char* argv[])
 			for(ii=0;ii<ReducedMatrixTwo;ii++){
 				MatrixReducedThree[iii][ii] = Matrix[i][ii];
 			}
-		mapprimes[iii]=i;
-		iii = iii +1;
+			mapprimes[iii]=i;
+			iii = iii +1;
 		}
 	}
 
@@ -624,7 +642,7 @@ int main(int argc, char* argv[])
 	// ReducedMatrixRows <- Number of rows
 	// ReducedMatrixTwo  <- Number of columns
 
-	
+
 	ii = 0;
 	int check;
 	int selection[10000];
@@ -648,22 +666,22 @@ int main(int argc, char* argv[])
 		}while(check == 0 && ii < ReducedMatrixRows);
 
 		if(check == 1){
-		for(ii=0;ii<ReducedMatrixRows;ii++){ // over all rows
-			
-			if(MatrixReducedThree[ii][i] == 1 && selection[i] != ii){
-				if(i==0){
-				for(iii=0;iii<ReducedMatrixTwo;iii++){ // clumsy way of doing it, split it...
-					MatrixReducedThree[ii][iii]=(MatrixReducedThree[ii][iii]+MatrixReducedThree[selection[i]][iii]) % 2; // I need to make this run over all columns
-				}
-				}
+			for(ii=0;ii<ReducedMatrixRows;ii++){ // over all rows
 
-				if(i != 0 && selection[i] != 0){
-					for(iii=0;iii<ReducedMatrixTwo;iii++){
-					MatrixReducedThree[ii][iii]=(MatrixReducedThree[ii][iii]+MatrixReducedThree[selection[i]][iii]) % 2;
-				}
+				if(MatrixReducedThree[ii][i] == 1 && selection[i] != ii){
+					if(i==0){
+						for(iii=0;iii<ReducedMatrixTwo;iii++){ // clumsy way of doing it, split it...
+							MatrixReducedThree[ii][iii]=(MatrixReducedThree[ii][iii]+MatrixReducedThree[selection[i]][iii]) % 2; // I need to make this run over all columns
+						}
+					}
+
+					if(i != 0 && selection[i] != 0){
+						for(iii=0;iii<ReducedMatrixTwo;iii++){
+							MatrixReducedThree[ii][iii]=(MatrixReducedThree[ii][iii]+MatrixReducedThree[selection[i]][iii]) % 2;
+						}
+					}
 				}
 			}
-		}
 		}
 		check = 0;
 	}
@@ -691,207 +709,207 @@ int main(int argc, char* argv[])
 	// in case my first congruence gives no factor...
 	do{
 
-	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
-	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* Linear Dependency *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
-	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* Linear Dependency *//* xxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 
 
-	/* Variables for this section */
-	// chosing vector
-	int Vektorwahl; //this contains the sum of the elements in the vector -> if it's zero I have a zero vector, which is of little use
+		/* Variables for this section */
+		// chosing vector
+		int Vektorwahl; //this contains the sum of the elements in the vector -> if it's zero I have a zero vector, which is of little use
 
-	// searchign for the right pivots
-	int NumberSelectedVectors;
-	int ChosenVectors[10000];
-	for(i = 0; i <= 9999; i++){
-		ChosenVectors[i]=0;
-	}
-	iii = 0;
+		// searchign for the right pivots
+		int NumberSelectedVectors;
+		int ChosenVectors[10000];
+		for(i = 0; i <= 9999; i++){
+			ChosenVectors[i]=0;
+		}
+		iii = 0;
 
-	/* The idea: Pick a vector from the right of the matrix, then select pivots from the right
+		/* The idea: Pick a vector from the right of the matrix, then select pivots from the right
 	finally add all elements together, rows in modulo 2, they should add up to zero */
-	
-	i = ReducedMatrixTwo-Blacklist; // starting at the right hand side of my matrix
 
-	do{
-		Vektorwahl = 0;
-		for(ii=0;ii<ReducedMatrixRows;ii++){
-			Vektorwahl = Vektorwahl + MatrixReducedThree[ii][i];
-			//swapped i and ii round, I need to go trhough the rows not columns as I did before by accident
+		i = ReducedMatrixTwo-Blacklist; // starting at the right hand side of my matrix
+
+		do{
+			Vektorwahl = 0;
+			for(ii=0;ii<ReducedMatrixRows;ii++){
+				Vektorwahl = Vektorwahl + MatrixReducedThree[ii][i];
+				//swapped i and ii round, I need to go trhough the rows not columns as I did before by accident
+			}
+			i = i-1;
+		}while(Vektorwahl == 0); //this do loop will find a non-zero vector, starting from the right hand side of the matrix
+
+		Vektorwahl = i; // -> Now "Vektorwahl" contains the "ID" of the selected Vector
+
+		std::cout << "The selected vector has position " << Vektorwahl << "\n"; // Just testing & feedback for user, works
+
+		// Next step: Find the pivots that fit "our" vector and will add to a zero vector in mod 2
+
+		for(i=0;i<ReducedMatrixRows;i++){
+			//std::cout << i << "\n";
+			if(MatrixReducedThree[i][Vektorwahl] == 1){
+				check = 0;
+				ii = 0;
+
+				do{
+					if(selection[ii] == i){ // search for the columns with pivots in the required rows
+						check = 1;
+						ChosenVectors[iii] = ii;
+						iii = iii+1;
+						//std::cout << iii << "\n";
+					}
+					ii = ii + 1;
+				}while(check == 0 && ii < ReducedMatrixTwo);
+			}
 		}
-		i = i-1;
-	}while(Vektorwahl == 0); //this do loop will find a non-zero vector, starting from the right hand side of the matrix
 
-	Vektorwahl = i; // -> Now "Vektorwahl" contains the "ID" of the selected Vector
+		iii = NumberSelectedVectors;
 
-	std::cout << "The selected vector has position " << Vektorwahl << "\n"; // Just testing & feedback for user, works
+		std::cout << "Vectors Selected \n";
+		//std::cout << "The Number of Selected Vectors is " << NumberSelectedVectors << "\n" ; // just testing
 
-	// Next step: Find the pivots that fit "our" vector and will add to a zero vector in mod 2
-
-	for(i=0;i<ReducedMatrixRows;i++){
-		//std::cout << i << "\n";
-		if(MatrixReducedThree[i][Vektorwahl] == 1){
-			check = 0;
-			ii = 0;
-
-			do{
-				if(selection[ii] == i){ // search for the columns with pivots in the required rows
-					check = 1;
-					ChosenVectors[iii] = ii;
-					iii = iii+1;
-					//std::cout << iii << "\n";
-				}
-				ii = ii + 1;
-			}while(check == 0 && ii < ReducedMatrixTwo);
-		}
-	}
-
-	iii = NumberSelectedVectors;
-
-	std::cout << "Vectors Selected \n";
-	//std::cout << "The Number of Selected Vectors is " << NumberSelectedVectors << "\n" ; // just testing
-
-	/*for(i=0;i<NumberSelectedVectors;i++){ // Just testing
+		/*for(i=0;i<NumberSelectedVectors;i++){ // Just testing
 		std::cout << ChosenVectors[i] << "\n";
 	}*/
 
-	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
-	/* xxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* End Linear Dependency *//* xxxxxxxxxxxxxxxxxxxxxxxxxxx */
-	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxxxxx *//* End Linear Dependency *//* xxxxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 
 
-	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
-	/* xxxxxxxxxxxxxxxxxxxxx *//* Now let us make use of our vectors *//* xxxxxxxxxxxxxxxxxxxxx */
-	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxx *//* Now let us make use of our vectors *//* xxxxxxxxxxxxxxxxxxxxx */
+		/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 
-	/* Variables for this section: */
+		/* Variables for this section: */
 
-	// maptwo[] contains the mappings for my "M" which I need to select the right ones
-	int choices[5000];
-	int choice;
+		// maptwo[] contains the mappings for my "M" which I need to select the right ones
+		int choices[5000];
+		int choice;
 
-	int ChoicePrimePowers[5000];
-	for(i=0;i<4999;i++){
-		ChoicePrimePowers[i]=0;
-	}
-	int ChoicePrimePowerArray;
-
-	mpz_t LargeX;
-	mpz_init(LargeX);
-	mpz_set_ui(LargeX,1); // set one for later multiplications, an empty variable with zero wouldn't work
-	mpz_set_ui(MFactorBase[0].get_mpz_t(),1);
-	
-	// my large y, 1 for multiplication
-	mpz_t LargeY;
-	mpz_init(LargeY);
-	mpz_set_ui(LargeY,1);
-
-	/* End variables for this section */
-
-	ii = 1;
-	choices[0]=maptwo[ChosenVectors[0]]; //this case must be handled individually because of the later zeroes...
-	for(i=1;i<NumberSelectedVectors;i++){
-		if(ChosenVectors[i] > 0){
-			choices[ii]=maptwo[ChosenVectors[i]];
-			ii = ii + 1;
+		int ChoicePrimePowers[5000];
+		for(i=0;i<4999;i++){
+			ChoicePrimePowers[i]=0;
 		}
-	}
-	choices[ii]=maptwo[Vektorwahl];
+		int ChoicePrimePowerArray;
 
-	choice = ii+1;
-	//std::cout << choice << "\n"; // Just checking, works
+		mpz_t LargeX;
+		mpz_init(LargeX);
+		mpz_set_ui(LargeX,1); // set one for later multiplications, an empty variable with zero wouldn't work
+		mpz_set_ui(MFactorBase[0].get_mpz_t(),1);
 
-	/*for(i=0;i<choice;i++){
+		// my large y, 1 for multiplication
+		mpz_t LargeY;
+		mpz_init(LargeY);
+		mpz_set_ui(LargeY,1);
+
+		/* End variables for this section */
+
+		ii = 1;
+		choices[0]=maptwo[ChosenVectors[0]]; //this case must be handled individually because of the later zeroes...
+		for(i=1;i<NumberSelectedVectors;i++){
+			if(ChosenVectors[i] > 0){
+				choices[ii]=maptwo[ChosenVectors[i]];
+				ii = ii + 1;
+			}
+		}
+		choices[ii]=maptwo[Vektorwahl];
+
+		choice = ii+1;
+		//std::cout << choice << "\n"; // Just checking, works
+
+		/*for(i=0;i<choice;i++){
 		std::cout << "My positions are " << i << " - " << choices[i] << "\n";
 	}*/
 
-	// calculating my "LargeX"
-	for(i=0;i<choice;i++){
-		mpz_mul(LargeX,LargeX,SievingInterval[choices[i]]);
-	}
-
-	// Now the prime powers
-	iii = 0;
-	for(i=0;i<FactorBaseArray;i++){
-		for(ii = 0;ii<choice;ii++){
-			ChoicePrimePowers[iii] = ChoicePrimePowers[i]+FirstPowerSieving[i][choices[ii]];
+		// calculating my "LargeX"
+		for(i=0;i<choice;i++){
+			mpz_mul(LargeX,LargeX,SievingInterval[choices[i]].get_mpz_t());
 		}
-		iii = iii + 1;
-	}
-	ChoicePrimePowerArray = iii;
-	// now I have all my powers
-	//I need to halve all of them
 
-	for(i=0;i<ChoicePrimePowerArray;i++){
-		ChoicePrimePowers[i] = ChoicePrimePowers[i]/2; //half the values
-	}
-	
-	// testing prime powers
-	/*for(i=0;i<ChoicePrimePowerArray;i++){
+		// Now the prime powers
+		iii = 0;
+		for(i=0;i<FactorBaseArray;i++){
+			for(ii = 0;ii<choice;ii++){
+				ChoicePrimePowers[iii] = ChoicePrimePowers[i]+FirstPowerSieving[i][choices[ii]];
+			}
+			iii = iii + 1;
+		}
+		ChoicePrimePowerArray = iii;
+		// now I have all my powers
+		//I need to halve all of them
+
+		for(i=0;i<ChoicePrimePowerArray;i++){
+			ChoicePrimePowers[i] = ChoicePrimePowers[i]/2; //half the values
+		}
+
+		// testing prime powers
+		/*for(i=0;i<ChoicePrimePowerArray;i++){
 		mpz_out_str(stdout,10, MFactorBase[i]);
 		std::cout<< " - " << ChoicePrimePowers[i] << "\n";
 	}*/
 
-	for(i=1;i<ChoicePrimePowerArray;i++){
-		mpz_pow_ui(Zii,MFactorBase[i].get_mpz_t(),ChoicePrimePowers[i]);
-		mpz_mul(LargeY,LargeY,Zii);
-	}
+		for(i=1;i<ChoicePrimePowerArray;i++){
+			mpz_pow_ui(Zii,MFactorBase[i].get_mpz_t(),ChoicePrimePowers[i]);
+			mpz_mul(LargeY,LargeY,Zii);
+		}
 
-	// Let's do the mod stuff
-	mpz_mod(LargeX,LargeX,N);
-	mpz_mod(LargeY,LargeY,N);
-	
-	/*mpz_sub(Zii,LargeX,LargeY);
+		// Let's do the mod stuff
+		mpz_mod(LargeX,LargeX,N);
+		mpz_mod(LargeY,LargeY,N);
+
+		/*mpz_sub(Zii,LargeX,LargeY);
 	if(mpz_get_ui(Zii) == 0 ){
 		Verification = 1;
 		std::cout << "LargeX and LargeY are equal \n";
 		std::cout << "\n Large X - Large Y N is 0 ";
 		Verification = 1;
 	}*/
-	/*std::cout << "\n Large X - Large Y N is: ";
+		/*std::cout << "\n Large X - Large Y N is: ";
 	mpz_out_str(stdout,10, Zii);
 	printf ("\n");*/
 
-	// Output LargeX and LargeY for the user to see
+		// Output LargeX and LargeY for the user to see
 
-	std::cout << "\n The Large X in modulo N is: ";
-	mpz_out_str(stdout,10, LargeX);
-	printf ("\n");
+		std::cout << "\n The Large X in modulo N is: ";
+		mpz_out_str(stdout,10, LargeX);
+		printf ("\n");
 
-	std::cout << "\n The Large Y in modulo N is: ";
-	mpz_out_str(stdout,10, LargeY);
-	printf ("\n");
+		std::cout << "\n The Large Y in modulo N is: ";
+		mpz_out_str(stdout,10, LargeY);
+		printf ("\n");
 
-	// subtract Y from X
-	mpz_sub(Zii,LargeX,LargeY);
-	// fidn the greatest common divisor with N
-	mpz_gcd(Zii,Zii,N);
+		// subtract Y from X
+		mpz_sub(Zii,LargeX,LargeY);
+		// fidn the greatest common divisor with N
+		mpz_gcd(Zii,Zii,N);
 
-	// I need to check whether Zii is one, if yes, redo with another congruence
+		// I need to check whether Zii is one, if yes, redo with another congruence
 
-	if(mpz_get_ui(Zii)!=1){ //if factor is nontrivial
-	Verification = 0;
-	std::cout << "\n A factor has been found \n";
-	std::cout << " The first factor is ";
-	mpz_out_str(stdout,10, Zii); // Output the result
-	//printf ("\n");
-	mpz_divexact(Zii,N,Zii);
-	std::cout << "\n The second factor is ";
-	mpz_out_str(stdout,10, Zii);
-	printf ("\n");
-	time_t endtime;
-	endtime = time (NULL);
-	std::cout << " \n The program took " << endtime - starttime<< " seconds to run." << "\n";
-	}
-	else{ //if factor is trivial, i.e. 1
-	std::cout << "The " << Blacklist << " congruence has not resulted in a non-trivial factor. \n \n";
-	Verification = 1;
-	Blacklist = Blacklist + 1;
-	}
+		if(mpz_get_ui(Zii)!=1){ //if factor is nontrivial
+			Verification = 0;
+			std::cout << "\n A factor has been found \n";
+			std::cout << " The first factor is ";
+			mpz_out_str(stdout,10, Zii); // Output the result
+			//printf ("\n");
+			mpz_divexact(Zii,N,Zii);
+			std::cout << "\n The second factor is ";
+			mpz_out_str(stdout,10, Zii);
+			printf ("\n");
+			time_t endtime;
+			endtime = time (NULL);
+			std::cout << " \n The program took " << endtime - starttime<< " seconds to run." << "\n";
+		}
+		else{ //if factor is trivial, i.e. 1
+			std::cout << "The " << Blacklist << " congruence has not resulted in a non-trivial factor. \n \n";
+			Verification = 1;
+			Blacklist = Blacklist + 1;
+		}
 
-	// closing do for loop in case of no factor
+		// closing do for loop in case of no factor
 	}while(Verification != 0 && Blacklist < ReducedMatrixTwo-1);
-	
+
 	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* End making  use of vectors *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
 	/* xxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxxx *//* xxxxxxxxxxxxxxxxxxxxxxxxx */
@@ -906,10 +924,10 @@ int main(int argc, char* argv[])
 	for(i = 0; i <= 19999; i++){
 		mpz_clear(MPrimes[i]);
 	}//*/
-	
+
 	mpz_clear(step1);
 	mpz_clear(step2);
-		
+
 	mpf_clear(Root1);
 	mpf_clear(Root2);
 
